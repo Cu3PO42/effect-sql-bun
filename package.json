@@ -1,0 +1,34 @@
+{
+  "name": "effect-sql-bun",
+  "version": "0.1.0",
+  "description": "Effect SQL client for Bun's PostgreSQL, MySQL, MariaDB and SQLite adapters",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "packageManager": "bun@1.4.5",
+  "engines": { "bun": ">=1.4.5" },
+  "files": ["dist"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./drizzle-postgres": { "types": "./dist/drizzle-postgres.d.ts", "default": "./dist/drizzle-postgres.js" },
+    "./drizzle-mysql": { "types": "./dist/drizzle-mysql.d.ts", "default": "./dist/drizzle-mysql.js" },
+    "./drizzle-sqlite": { "types": "./dist/drizzle-sqlite.d.ts", "default": "./dist/drizzle-sqlite.js" }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "bun run build",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "1.0.0-rc.6",
+    "effect": "^4.1.5"
+  },
+  "peerDependenciesMeta": { "drizzle-orm": { "optional": true } },
+  "devDependencies": {
+    "@types/bun": "1.4.5",
+    "drizzle-orm": "1.0.0-rc.6",
+    "effect": "4.1.5",
+    "typescript": "6.0.3"
+  }
+}
