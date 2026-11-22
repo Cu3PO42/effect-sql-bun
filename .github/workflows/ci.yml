@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test all databases
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: effect_test
+          POSTGRES_USER: effect_test
+          POSTGRES_PASSWORD: effect_test
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U effect_test -d effect_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: effect_test
+          MYSQL_USER: effect_test
+          MYSQL_PASSWORD: effect_test
+          MYSQL_ROOT_PASSWORD: effect_test_root
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd "mysql --protocol=TCP -h 127.0.0.1 -u effect_test --password=effect_test effect_test -e 'SELECT 1'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: effect_test
+          MARIADB_USER: effect_test
+          MARIADB_PASSWORD: effect_test
+          MARIADB_ROOT_PASSWORD: effect_test_root
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd "mariadb --protocol=TCP -h 127.0.0.1 -u effect_test --password=effect_test effect_test -e 'SELECT 1'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check source and tests
+        run: bun run typecheck
+
+      - name: Run unit and integration tests
+        env:
+          TEST_POSTGRES_URL: postgres://effect_test:effect_test@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/effect_test
+          TEST_MYSQL_URL: mysql://effect_test:effect_test@127.0.0.1:${{ job.services.mysql.ports['3306'] }}/effect_test?allowPublicKeyRetrieval=true
+          TEST_MARIADB_URL: mariadb://effect_test:effect_test@127.0.0.1:${{ job.services.mariadb.ports['3306'] }}/effect_test
+        run: bun run test
+
+      - name: Build JavaScript and declarations
+        run: bun run build
